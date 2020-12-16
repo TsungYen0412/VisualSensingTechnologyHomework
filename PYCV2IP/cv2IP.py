@@ -59,6 +59,7 @@ class AlphaBlend(BaseIP):
         My_out = My_fore + My_back
         return My_out
 
+
 class HistIP(BaseIP):
 
     def __init__(self):
@@ -232,3 +233,69 @@ class HistIP(BaseIP):
             DstYUV[:,:,0] = cv2.LUT(SrcYUV[:,:,0], LUT, Epsilon)
             DstImg = cv2.cvtColor(DstYUV, cv2.COLOR_YUV2BGR)
         return DstImg
+
+
+class ConvIP(BaseIP):
+
+    def __init__(self):
+        super().__init__()
+
+    class SmoothType(enum.IntEnum):
+        BLUR = 1
+        BOX = 2
+        GAUSSIAN = 3
+        MEDIAN = 4
+        BILATERAL = 5
+
+    class EdgeType(enum.IntEnum):
+        SOBEL = 1
+        CANNY = 2
+        SCHARR = 3
+        LAPLACE = 4
+        COLOR_SOBEL = 5
+
+    @staticmethod
+    def Smooth2D(SrcImg, ksize = 15, SmType = SmoothType.BLUR):
+        if SmType == ConvIP.SmoothType.BLUR:
+            OutImg = cv2.blur(SrcImg, (ksize, ksize))
+        elif SmType == ConvIP.SmoothType.BOX:
+            OutImg = cv2.boxFilter(SrcImg, -1, (ksize, ksize))
+        elif SmType == ConvIP.SmoothType.GAUSSIAN:
+            OutImg = cv2.GaussianBlur(SrcImg, (ksize, ksize), 0)
+        elif SmType == ConvIP.SmoothType.MEDIAN:
+            OutImg = cv2.medianBlur(SrcImg, ksize)
+        elif SmType == ConvIP.SmoothType.BILATERAL:
+            OutImg = cv2.bilateralFilter(SrcImg, 9, 75, 75)
+        return OutImg
+
+    @staticmethod
+    def EdgeDetect(SrcImg, EdType = EdgeType.SOBEL):
+        if EdType == ConvIP.EdgeType.SOBEL:
+            GrayImg = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
+            Gradient_X_64F = cv2.Sobel(GrayImg, cv2.CV_64F, 1, 0)
+            Gradient_Y_64F = cv2.Sobel(GrayImg, cv2.CV_64F, 0, 1)
+            Gradient_X_8U = cv2.convertScaleAbs(Gradient_X_64F)
+            Gradient_Y_8U = cv2.convertScaleAbs(Gradient_Y_64F)
+            OutImg = cv2.convertScaleAbs(Gradient_X_8U * 0.5 + Gradient_Y_8U * 0.5)
+        elif EdType == ConvIP.EdgeType.CANNY:
+            GrayImg = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
+            BlurredImg = cv2.GaussianBlur(GrayImg, (3, 3), 0)
+            OutImg = cv2.Canny(BlurredImg, 30, 70)
+        elif EdType == ConvIP.EdgeType.SCHARR:
+            GrayImg = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
+            Gradient_X_64F = cv2.Scharr(GrayImg, cv2.CV_64F, 1, 0)
+            Gradient_Y_64F = cv2.Scharr(GrayImg, cv2.CV_64F, 0, 1)
+            Gradient_X_8U = cv2.convertScaleAbs(Gradient_X_64F)
+            Gradient_Y_8U = cv2.convertScaleAbs(Gradient_Y_64F)
+            OutImg = cv2.convertScaleAbs(Gradient_X_8U * 0.5 + Gradient_Y_8U * 0.5)
+        elif EdType == ConvIP.EdgeType.LAPLACE:
+            GrayImg = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
+            OutImg_64F = cv2.Laplacian(GrayImg, cv2.CV_64F, ksize = 3)
+            OutImg = cv2.convertScaleAbs(OutImg_64F)
+        elif EdType == ConvIP.EdgeType.COLOR_SOBEL:
+            Gradient_X_64F = cv2.Sobel(SrcImg, cv2.CV_64F, 1, 0)
+            Gradient_Y_64F = cv2.Sobel(SrcImg, cv2.CV_64F, 0, 1)
+            Gradient_X_8U = cv2.convertScaleAbs(Gradient_X_64F)
+            Gradient_Y_8U = cv2.convertScaleAbs(Gradient_Y_64F)
+            OutImg = cv2.convertScaleAbs(Gradient_X_8U * 0.5 + Gradient_Y_8U * 0.5)
+        return OutImg
