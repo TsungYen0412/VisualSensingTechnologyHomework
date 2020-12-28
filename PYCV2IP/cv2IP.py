@@ -33,6 +33,16 @@ class BaseIP(object):
     def ImWindow(winname):
         cv2.namedWindow(winname, cv2.WINDOW_NORMAL)
 
+    @staticmethod
+    def ImBGR2Gray(SrcImg):
+        DstImg = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
+        return DstImg
+
+    @staticmethod
+    def ImBGRA2BGR(SrcImg):
+        DstImg = np.array(SrcImg[:,:,:3])
+        return DstImg
+
 
 class AlphaBlend(BaseIP):
 
@@ -69,16 +79,6 @@ class HistIP(BaseIP):
         USE_RGB = 1
         USE_HSV = 2
         USE_YUV = 3
-
-    @staticmethod
-    def ImBGR2Gray(SrcImg):
-        DstImg = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
-        return DstImg
-
-    @staticmethod
-    def ImBGRA2BGR(SrcImg):
-        DstImg = np.array(SrcImg[:,:,:3])
-        return DstImg
 
     @staticmethod
     def CalcGrayHist(SrcGray):
@@ -239,6 +239,9 @@ class ConvIP(BaseIP):
 
     def __init__(self):
         super().__init__()
+        self.__RobertsKernel = np.zeros((2, 2, 2), dtype=np.int) # Gx, Gy
+        self.__PrewittKernel = np.zeros((3, 3, 2), dtype=np.int) # x, y
+        self.__KirschKernel = np.full((3, 3, 8), -3, dtype=np.int) # E, NE, N, NW, W, SW, S, SE
 
     class SmoothType(enum.IntEnum):
         BLUR = 1
@@ -253,6 +256,12 @@ class ConvIP(BaseIP):
         SCHARR = 3
         LAPLACE = 4
         COLOR_SOBEL = 5
+
+    class SharpType(enum.IntEnum):
+        LAPLACE_TYPE1 = 1
+        LAPLACE_TYPE2 = 2
+        SECOND_ORDER_LOG = 3
+        UNSHARP_MASK = 4
 
     @staticmethod
     def Smooth2D(SrcImg, ksize = 15, SmType = SmoothType.BLUR):
@@ -271,25 +280,25 @@ class ConvIP(BaseIP):
     @staticmethod
     def EdgeDetect(SrcImg, EdType = EdgeType.SOBEL):
         if EdType == ConvIP.EdgeType.SOBEL:
-            GrayImg = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
+            GrayImg = ConvIP.ImBGR2Gray(SrcImg)
             Gradient_X_64F = cv2.Sobel(GrayImg, cv2.CV_64F, 1, 0)
             Gradient_Y_64F = cv2.Sobel(GrayImg, cv2.CV_64F, 0, 1)
             Gradient_X_8U = cv2.convertScaleAbs(Gradient_X_64F)
             Gradient_Y_8U = cv2.convertScaleAbs(Gradient_Y_64F)
             OutImg = cv2.convertScaleAbs(Gradient_X_8U * 0.5 + Gradient_Y_8U * 0.5)
         elif EdType == ConvIP.EdgeType.CANNY:
-            GrayImg = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
+            GrayImg = ConvIP.ImBGR2Gray(SrcImg)
             BlurredImg = cv2.GaussianBlur(GrayImg, (3, 3), 0)
             OutImg = cv2.Canny(BlurredImg, 30, 70)
         elif EdType == ConvIP.EdgeType.SCHARR:
-            GrayImg = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
+            GrayImg = ConvIP.ImBGR2Gray(SrcImg)
             Gradient_X_64F = cv2.Scharr(GrayImg, cv2.CV_64F, 1, 0)
             Gradient_Y_64F = cv2.Scharr(GrayImg, cv2.CV_64F, 0, 1)
             Gradient_X_8U = cv2.convertScaleAbs(Gradient_X_64F)
             Gradient_Y_8U = cv2.convertScaleAbs(Gradient_Y_64F)
             OutImg = cv2.convertScaleAbs(Gradient_X_8U * 0.5 + Gradient_Y_8U * 0.5)
         elif EdType == ConvIP.EdgeType.LAPLACE:
-            GrayImg = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
+            GrayImg = ConvIP.ImBGR2Gray(SrcImg)
             OutImg_64F = cv2.Laplacian(GrayImg, cv2.CV_64F, ksize = 3)
             OutImg = cv2.convertScaleAbs(OutImg_64F)
         elif EdType == ConvIP.EdgeType.COLOR_SOBEL:
@@ -299,3 +308,136 @@ class ConvIP(BaseIP):
             Gradient_Y_8U = cv2.convertScaleAbs(Gradient_Y_64F)
             OutImg = cv2.convertScaleAbs(Gradient_X_8U * 0.5 + Gradient_Y_8U * 0.5)
         return OutImg
+
+    def __InitRobertsKernel(self):
+        #----------------Gx---------------#
+        self.__RobertsKernel[0,0,0] =  1
+        self.__RobertsKernel[1,1,0] = -1
+        #----------------Gy---------------#
+        self.__RobertsKernel[1,0,1] =  1
+        self.__RobertsKernel[0,1,1] = -1
+
+    def __InitPrewittKernel(self):
+        #----------------x----------------#
+        self.__PrewittKernel[0,0,0] = -1
+        self.__PrewittKernel[2,0,0] =  1
+        self.__PrewittKernel[0,1,0] = -1
+        self.__PrewittKernel[2,1,0] =  1
+        self.__PrewittKernel[0,2,0] = -1
+        self.__PrewittKernel[2,2,0] =  1
+        #----------------y----------------#
+        self.__PrewittKernel[0,0,1] = -1
+        self.__PrewittKernel[1,0,1] = -1
+        self.__PrewittKernel[2,0,1] = -1
+        self.__PrewittKernel[0,2,1] =  1
+        self.__PrewittKernel[1,2,1] =  1
+        self.__PrewittKernel[2,2,1] =  1
+    
+    def __InitKirschKernel(self):
+        #----------------E----------------#
+        self.__KirschKernel[2,0,0] = 5
+        self.__KirschKernel[1,1,0] = 0
+        self.__KirschKernel[2,1,0] = 5
+        self.__KirschKernel[2,2,0] = 5
+        #----------------NE---------------#
+        self.__KirschKernel[1,0,1] = 5
+        self.__KirschKernel[2,0,1] = 5
+        self.__KirschKernel[1,1,1] = 0
+        self.__KirschKernel[2,1,1] = 5
+        #----------------N----------------#
+        self.__KirschKernel[0,0,2] = 5
+        self.__KirschKernel[1,0,2] = 5
+        self.__KirschKernel[2,0,2] = 5
+        self.__KirschKernel[1,1,2] = 0
+        #----------------NW---------------#
+        self.__KirschKernel[0,0,3] = 5
+        self.__KirschKernel[1,0,3] = 5
+        self.__KirschKernel[0,1,3] = 5
+        self.__KirschKernel[1,1,3] = 0
+        #----------------W----------------#
+        self.__KirschKernel[0,0,4] = 5
+        self.__KirschKernel[0,1,4] = 5
+        self.__KirschKernel[1,1,4] = 0
+        self.__KirschKernel[0,2,4] = 5
+        #----------------SW---------------#
+        self.__KirschKernel[0,1,5] = 5
+        self.__KirschKernel[1,1,5] = 0
+        self.__KirschKernel[0,2,5] = 5
+        self.__KirschKernel[1,2,5] = 5
+        #----------------S----------------#
+        self.__KirschKernel[1,1,6] = 0
+        self.__KirschKernel[0,2,6] = 5
+        self.__KirschKernel[1,2,6] = 5
+        self.__KirschKernel[2,2,6] = 5
+        #----------------SE---------------#
+        self.__KirschKernel[1,1,7] = 0
+        self.__KirschKernel[2,1,7] = 5
+        self.__KirschKernel[1,2,7] = 5
+        self.__KirschKernel[2,2,7] = 5
+
+    def GetRobertsKernel(self):
+        self.__InitRobertsKernel()
+        # Kernels = tuple(map(tuple, self.__PrewittKernel[:,:,0:2]))
+        return (self.__RobertsKernel[:,:,0], self.__RobertsKernel[:,:,1])
+
+    def GetPrewittKernel(self):
+        self.__InitPrewittKernel()
+        return (self.__PrewittKernel[:,:,0], self.__PrewittKernel[:,:,1])
+    
+    def GetKirschKernel(self):
+        self.__InitKirschKernel()
+        return (self.__KirschKernel[:,:,0], self.__KirschKernel[:,:,1], \
+                self.__KirschKernel[:,:,2], self.__KirschKernel[:,:,3], \
+                self.__KirschKernel[:,:,4], self.__KirschKernel[:,:,5], \
+                self.__KirschKernel[:,:,6], self.__KirschKernel[:,:,7])
+
+    @staticmethod
+    def Conv2D(SrcImg, Kernel):
+        DstImg = cv2.filter2D(SrcImg, -1, Kernel)
+        return DstImg
+
+    @staticmethod
+    def ImSharpening(SrcImg, SpType = SharpType.UNSHARP_MASK, SmType = SmoothType.BILATERAL):
+        Landa = 0.5
+        if SpType == ConvIP.SharpType.LAPLACE_TYPE1:
+            Original = np.zeros((3, 3), dtype=np.int)
+            Original[1,1] =  1
+            Filtered = np.zeros((3, 3), dtype=np.int)
+            Filtered[1,0] = -1
+            Filtered[0,1] = -1
+            Filtered[1,1] =  4
+            Filtered[2,1] = -1
+            Filtered[1,2] = -1
+            Resulting = Original + Landa * Filtered
+            DstImg = ConvIP.Conv2D(SrcImg, Resulting)
+        elif SpType == ConvIP.SharpType.LAPLACE_TYPE2:
+            Original = np.zeros((3, 3), dtype=np.int)
+            Original[1,1] = 1
+            Filtered = np.full((3, 3), -1, dtype=np.int)
+            Filtered[1,1] = 8
+            Resulting = Original + Landa * Filtered
+            DstImg = ConvIP.Conv2D(SrcImg, Resulting)
+        elif SpType == ConvIP.SharpType.SECOND_ORDER_LOG:
+            Original = np.zeros((5, 5), dtype=np.int)
+            Original[2,2] = 1
+            Filtered = np.zeros((5, 5), dtype=np.int)
+            Filtered[2,0] = -1
+            Filtered[1,1] = -1
+            Filtered[2,1] = -2
+            Filtered[3,1] = -1
+            Filtered[0,2] = -1
+            Filtered[1,2] = -2
+            Filtered[2,2] = 16
+            Filtered[3,2] = -2
+            Filtered[4,2] = -1
+            Filtered[1,3] = -1
+            Filtered[2,3] = -2
+            Filtered[3,3] = -1
+            Filtered[2,4] = -1
+            Resulting = Original + Landa * Filtered
+            DstImg = ConvIP.Conv2D(SrcImg, Resulting)
+        elif SpType == ConvIP.SharpType.UNSHARP_MASK:
+            Coarse = ConvIP.Smooth2D(SrcImg, 5, SmType)
+            Fine = SrcImg * 1.0 - Coarse * 1.0
+            DstImg = cv2.convertScaleAbs(SrcImg + Landa * Fine)
+        return DstImg
