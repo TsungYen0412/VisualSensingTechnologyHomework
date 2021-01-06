@@ -17,29 +17,23 @@ class BaseIP(object):
         BaseIP.Obj_Num -= 1
         print("Delete 1 obj: Total number of BaseIP objects is "+ str(BaseIP.Obj_Num))
 
-    @staticmethod
-    def ImRead(filename):
+    def ImRead(self, filename):
         return cv2.imread(filename, cv2.IMREAD_UNCHANGED)
 
-    @staticmethod
-    def ImWrite(filename, img):
+    def ImWrite(self, filename, img):
         cv2.imwrite(filename, img)
 
-    @staticmethod
-    def ImShow(winname, img):
+    def ImShow(self, winname, img):
         cv2.imshow(winname, img)
 
-    @staticmethod
-    def ImWindow(winname):
+    def ImWindow(self, winname):
         cv2.namedWindow(winname, cv2.WINDOW_NORMAL)
 
-    @staticmethod
-    def ImBGR2Gray(SrcImg):
+    def ImBGR2Gray(self, SrcImg):
         DstImg = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2GRAY)
         return DstImg
 
-    @staticmethod
-    def ImBGRA2BGR(SrcImg):
+    def ImBGRA2BGR(self, SrcImg):
         DstImg = np.array(SrcImg[:,:,:3])
         return DstImg
 
@@ -49,22 +43,19 @@ class AlphaBlend(BaseIP):
     def __init__(self):
         super().__init__()
     
-    @staticmethod
-    def SplitAlpha(SrcImg):
+    def SplitAlpha(self, SrcImg):
         fore = cv2.merge([SrcImg[:,:,0], SrcImg[:,:,1], SrcImg[:,:,2]])
         alpha = cv2.merge([SrcImg[:,:,3], SrcImg[:,:,3], SrcImg[:,:,3]])
         return fore, alpha
-    
-    @staticmethod
-    def DoBlending(Foreground, Background, Alpha):
+
+    def DoBlending(self, Foreground, Background, Alpha):
         fore = Foreground * Alpha
         back = Background * (1.0 - Alpha)
         out = fore + back
         return out
 
-    @staticmethod
-    def MyDoBlending(Foreground, Background, Alpha, Beta):
-        My_fore = AlphaBlend.DoBlending(Foreground * Alpha, Background * Alpha, Beta)
+    def MyDoBlending(self, Foreground, Background, Alpha, Beta):
+        My_fore = self.DoBlending(Foreground * Alpha, Background * Alpha, Beta)
         My_back = Background * (1.0 - Alpha)
         My_out = My_fore + My_back
         return My_out
@@ -80,13 +71,11 @@ class HistIP(BaseIP):
         USE_HSV = 2
         USE_YUV = 3
 
-    @staticmethod
-    def CalcGrayHist(SrcGray):
+    def CalcGrayHist(self, SrcGray):
         GrayHist = cv2.calcHist([SrcGray], [0], None, [256], [0, 256])
         return GrayHist
 
-    @staticmethod
-    def ShowGrayHist(winname, GrayHist):
+    def ShowGrayHist(self, winname, GrayHist):
         plt.plot(GrayHist, "gray")
         plt.legend(["Gray"], loc="upper left")
         plt.title(winname)
@@ -94,16 +83,14 @@ class HistIP(BaseIP):
         plt.ylabel("Percentage of pixels")
         plt.show()
 
-    @staticmethod
-    def CalcColorHist(SrcColor):
+    def CalcColorHist(self, SrcColor):
         BlueHist = cv2.calcHist([SrcColor], [0], None, [256], [0, 256])
         GreenHist = cv2.calcHist([SrcColor], [1], None, [256], [0, 256])
         RedHist = cv2.calcHist([SrcColor], [2], None, [256], [0, 256])
         ColorHist = cv2.merge([BlueHist, GreenHist, RedHist])
         return ColorHist
 
-    @staticmethod
-    def ShowColorHist(winname, ColorHist):
+    def ShowColorHist(self, winname, ColorHist):
         plt.plot(ColorHist[:,:,0], "b")
         plt.plot(ColorHist[:,:,1], "g")
         plt.plot(ColorHist[:,:,2], "r")
@@ -113,62 +100,55 @@ class HistIP(BaseIP):
         plt.ylabel("Percentage of pixels")
         plt.show()
 
-    @staticmethod
-    def MonoEqualize(SrcGray):
+    def MonoEqualize(self, SrcGray):
         EqualizedGray = cv2.equalizeHist(SrcGray)
         return EqualizedGray
 
-    @staticmethod
-    def ColorEqualize(SrcColor, CType = ColorType.USE_HSV):
-        if CType == HistIP.ColorType.USE_RGB:
+    def ColorEqualize(self, SrcColor, CType = ColorType.USE_HSV):
+        if CType == self.ColorType.USE_RGB:
             EqualizedBlue = cv2.equalizeHist(SrcColor[:,:,0])
             EqualizedGreen = cv2.equalizeHist(SrcColor[:,:,1])
             EqualizedRed = cv2.equalizeHist(SrcColor[:,:,2])
             EqualizedColor = cv2.merge([EqualizedBlue, EqualizedGreen, EqualizedRed])
-        elif CType == HistIP.ColorType.USE_HSV:
+        elif CType == self.ColorType.USE_HSV:
             SrcHSV = cv2.cvtColor(SrcColor, cv2.COLOR_BGR2HSV)
             EqualizedHSV = np.array(SrcHSV)
             EqualizedHSV[:,:,2] = cv2.equalizeHist(SrcHSV[:,:,2])
             EqualizedColor = cv2.cvtColor(EqualizedHSV, cv2.COLOR_HSV2BGR)
-        elif CType == HistIP.ColorType.USE_YUV:
+        elif CType == self.ColorType.USE_YUV:
             SrcYUV = cv2.cvtColor(SrcColor, cv2.COLOR_BGR2YUV)
             EqualizedYUV = np.array(SrcYUV)
             EqualizedYUV[:,:,0] = cv2.equalizeHist(SrcYUV[:,:,0])
             EqualizedColor = cv2.cvtColor(EqualizedYUV, cv2.COLOR_YUV2BGR)
         return EqualizedColor
 
-    @staticmethod
-    def CalPDFGrayHist(SrcImg):
-        GrayHist = HistIP.CalcGrayHist(SrcImg)
+    def CalPDFGrayHist(self, SrcImg):
+        GrayHist = self.CalcGrayHist(SrcImg)
         PDFGrayHist = GrayHist / SrcImg.size
         return PDFGrayHist
 
-    @staticmethod
-    def CalPDFColorHist(SrcImg):
-        ColorHist = HistIP.CalcColorHist(SrcImg)
+    def CalPDFColorHist(self, SrcImg):
+        ColorHist = self.CalcColorHist(SrcImg)
         PDFColorHist = ColorHist / SrcImg[:,:,0].size
         return PDFColorHist
 
-    @staticmethod
-    def CalCDFGrayHist(SrcImg):
-        PDFGrayHist = HistIP.CalPDFGrayHist(SrcImg)
+    def CalCDFGrayHist(self, SrcImg):
+        PDFGrayHist = self.CalPDFGrayHist(SrcImg)
         CDFGrayHist = np.zeros(PDFGrayHist.shape)
         CDFGrayHist[0,:] = PDFGrayHist[0,:]
         for i in range(1,256,1):
             CDFGrayHist[i,:] = CDFGrayHist[i-1,:] + PDFGrayHist[i,:]
         return CDFGrayHist
 
-    @staticmethod
-    def CalCDFColorHist(SrcImg):
-        PDFColorHist = HistIP.CalPDFColorHist(SrcImg)
+    def CalCDFColorHist(self, SrcImg):
+        PDFColorHist = self.CalPDFColorHist(SrcImg)
         CDFColorHist = np.zeros(PDFColorHist.shape)
         CDFColorHist[0,:,:] = PDFColorHist[0,:,:]
         for i in range(1,256,1):
             CDFColorHist[i,:,:] = CDFColorHist[i-1,:,:] + PDFColorHist[i,:,:]
         return CDFColorHist
 
-    @staticmethod
-    def MyCalculateLUT(SrcCDFHist, RefCDFHist):
+    def MyCalculateLUT(self, SrcCDFHist, RefCDFHist):
         DiffCDFHist = np.zeros((256,256))
         for i in range(256):
             for j in range(256):
@@ -184,8 +164,7 @@ class HistIP(BaseIP):
             LUT[i] = Index
         return LUT
 
-    @staticmethod
-    def CalculateLUT(SrcCDFHist, RefCDFHist, Epsilon = 0.05):
+    def CalculateLUT(self, SrcCDFHist, RefCDFHist, Epsilon = 0.05):
         LUT = np.zeros(256, dtype=np.int)
         Last = 0
         for i in range(256):
@@ -196,39 +175,38 @@ class HistIP(BaseIP):
                     break
         return LUT
 
-    @staticmethod
-    def HistMatching(SrcImg, RefImg, Epsilon, CType = ColorType.USE_HSV):
-        if CType == HistIP.ColorType.USE_RGB:
+    def HistMatching(self, SrcImg, RefImg, Epsilon, CType = ColorType.USE_HSV):
+        if CType == self.ColorType.USE_RGB:
             #---------------------CDF---------------------#
-            Src_CDFHist = HistIP.CalCDFColorHist(SrcImg)
-            Ref_CDFHist = HistIP.CalCDFColorHist(RefImg)
+            Src_CDFHist = self.CalCDFColorHist(SrcImg)
+            Ref_CDFHist = self.CalCDFColorHist(RefImg)
             #---------------------LUT---------------------#
-            BlueLUT = HistIP.CalculateLUT(Src_CDFHist[:,:,0], Ref_CDFHist[:,:,0], Epsilon)
-            GreenLUT = HistIP.CalculateLUT(Src_CDFHist[:,:,1], Ref_CDFHist[:,:,1], Epsilon)
-            RedLUT = HistIP.CalculateLUT(Src_CDFHist[:,:,2], Ref_CDFHist[:,:,2], Epsilon)
+            BlueLUT = self.CalculateLUT(Src_CDFHist[:,:,0], Ref_CDFHist[:,:,0], Epsilon)
+            GreenLUT = self.CalculateLUT(Src_CDFHist[:,:,1], Ref_CDFHist[:,:,1], Epsilon)
+            RedLUT = self.CalculateLUT(Src_CDFHist[:,:,2], Ref_CDFHist[:,:,2], Epsilon)
             LUT = cv2.merge([BlueLUT, GreenLUT, RedLUT])
             DstImg = np.array(SrcImg)
             for i in range(3):
                 DstImg[:,:,i] = cv2.LUT(SrcImg[:,:,i], LUT[:,0,i])
-        elif CType == HistIP.ColorType.USE_HSV:
+        elif CType == self.ColorType.USE_HSV:
             SrcHSV = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2HSV)
             RefHSV = cv2.cvtColor(RefImg, cv2.COLOR_BGR2HSV)
             #---------------------CDF---------------------#
-            Src_CDFHist = HistIP.CalCDFGrayHist(SrcHSV[:,:,2])
-            Ref_CDFHist = HistIP.CalCDFGrayHist(RefHSV[:,:,2])
+            Src_CDFHist = self.CalCDFGrayHist(SrcHSV[:,:,2])
+            Ref_CDFHist = self.CalCDFGrayHist(RefHSV[:,:,2])
             #---------------------LUT---------------------#
-            LUT = HistIP.CalculateLUT(Src_CDFHist, Ref_CDFHist, Epsilon)
+            LUT = self.CalculateLUT(Src_CDFHist, Ref_CDFHist, Epsilon)
             DstHSV = np.array(SrcHSV)
             DstHSV[:,:,2] = cv2.LUT(SrcHSV[:,:,2], LUT)
             DstImg = cv2.cvtColor(DstHSV, cv2.COLOR_HSV2BGR)
-        elif CType == HistIP.ColorType.USE_YUV:
+        elif CType == self.ColorType.USE_YUV:
             SrcYUV = cv2.cvtColor(SrcImg, cv2.COLOR_BGR2YUV)
             RefYUV = cv2.cvtColor(RefImg, cv2.COLOR_BGR2YUV)
             #---------------------CDF---------------------#
-            Src_CDFHist = HistIP.CalCDFGrayHist(SrcYUV[:,:,0])
-            Ref_CDFHist = HistIP.CalCDFGrayHist(RefYUV[:,:,0])
+            Src_CDFHist = self.CalCDFGrayHist(SrcYUV[:,:,0])
+            Ref_CDFHist = self.CalCDFGrayHist(RefYUV[:,:,0])
             #---------------------LUT---------------------#
-            LUT = HistIP.CalculateLUT(Src_CDFHist, Ref_CDFHist, Epsilon)
+            LUT = self.CalculateLUT(Src_CDFHist, Ref_CDFHist, Epsilon)
             DstYUV = np.array(SrcYUV)
             DstYUV[:,:,0] = cv2.LUT(SrcYUV[:,:,0], LUT, Epsilon)
             DstImg = cv2.cvtColor(DstYUV, cv2.COLOR_YUV2BGR)
@@ -263,47 +241,47 @@ class ConvIP(BaseIP):
         SECOND_ORDER_LOG = 3
         UNSHARP_MASK = 4
 
-    @staticmethod
-    def Smooth2D(SrcImg, ksize = 15, SmType = SmoothType.BLUR):
-        if SmType == ConvIP.SmoothType.BLUR:
+    def Smooth2D(self, SrcImg, ksize = 15, SmType = SmoothType.BLUR,
+                  d = 9, sigma = 75):
+        if SmType == self.SmoothType.BLUR:
             OutImg = cv2.blur(SrcImg, (ksize, ksize))
-        elif SmType == ConvIP.SmoothType.BOX:
+        elif SmType == self.SmoothType.BOX:
             OutImg = cv2.boxFilter(SrcImg, -1, (ksize, ksize))
-        elif SmType == ConvIP.SmoothType.GAUSSIAN:
+        elif SmType == self.SmoothType.GAUSSIAN:
             OutImg = cv2.GaussianBlur(SrcImg, (ksize, ksize), 0)
-        elif SmType == ConvIP.SmoothType.MEDIAN:
+        elif SmType == self.SmoothType.MEDIAN:
             OutImg = cv2.medianBlur(SrcImg, ksize)
-        elif SmType == ConvIP.SmoothType.BILATERAL:
-            OutImg = cv2.bilateralFilter(SrcImg, 9, 75, 75)
+        elif SmType == self.SmoothType.BILATERAL:
+            OutImg = cv2.bilateralFilter(SrcImg, d, sigma, sigma)
         return OutImg
 
-    @staticmethod
-    def EdgeDetect(SrcImg, EdType = EdgeType.SOBEL):
-        if EdType == ConvIP.EdgeType.SOBEL:
-            GrayImg = ConvIP.ImBGR2Gray(SrcImg)
-            Gradient_X_64F = cv2.Sobel(GrayImg, cv2.CV_64F, 1, 0)
-            Gradient_Y_64F = cv2.Sobel(GrayImg, cv2.CV_64F, 0, 1)
+    def EdgeDetect(self, SrcImg, EdType = EdgeType.SOBEL, ksize = 3,
+                    lowThreshold = 80, highThreshold = 150):
+        if EdType == self.EdgeType.SOBEL:
+            GrayImg = self.ImBGR2Gray(SrcImg)
+            Gradient_X_64F = cv2.Sobel(GrayImg, cv2.CV_64F, 1, 0, ksize = ksize)
+            Gradient_Y_64F = cv2.Sobel(GrayImg, cv2.CV_64F, 0, 1, ksize = ksize)
             Gradient_X_8U = cv2.convertScaleAbs(Gradient_X_64F)
             Gradient_Y_8U = cv2.convertScaleAbs(Gradient_Y_64F)
             OutImg = cv2.convertScaleAbs(Gradient_X_8U * 0.5 + Gradient_Y_8U * 0.5)
-        elif EdType == ConvIP.EdgeType.CANNY:
-            GrayImg = ConvIP.ImBGR2Gray(SrcImg)
-            BlurredImg = cv2.GaussianBlur(GrayImg, (3, 3), 0)
-            OutImg = cv2.Canny(BlurredImg, 30, 70)
-        elif EdType == ConvIP.EdgeType.SCHARR:
-            GrayImg = ConvIP.ImBGR2Gray(SrcImg)
+        elif EdType == self.EdgeType.CANNY:
+            GrayImg = self.ImBGR2Gray(SrcImg)
+            BlurredImg = cv2.GaussianBlur(GrayImg, (ksize, ksize), 0)
+            OutImg = cv2.Canny(BlurredImg, lowThreshold, highThreshold)
+        elif EdType == self.EdgeType.SCHARR:
+            GrayImg = self.ImBGR2Gray(SrcImg)
             Gradient_X_64F = cv2.Scharr(GrayImg, cv2.CV_64F, 1, 0)
             Gradient_Y_64F = cv2.Scharr(GrayImg, cv2.CV_64F, 0, 1)
             Gradient_X_8U = cv2.convertScaleAbs(Gradient_X_64F)
             Gradient_Y_8U = cv2.convertScaleAbs(Gradient_Y_64F)
             OutImg = cv2.convertScaleAbs(Gradient_X_8U * 0.5 + Gradient_Y_8U * 0.5)
-        elif EdType == ConvIP.EdgeType.LAPLACE:
-            GrayImg = ConvIP.ImBGR2Gray(SrcImg)
-            OutImg_64F = cv2.Laplacian(GrayImg, cv2.CV_64F, ksize = 3)
+        elif EdType == self.EdgeType.LAPLACE:
+            GrayImg = self.ImBGR2Gray(SrcImg)
+            OutImg_64F = cv2.Laplacian(GrayImg, cv2.CV_64F, ksize = ksize)
             OutImg = cv2.convertScaleAbs(OutImg_64F)
-        elif EdType == ConvIP.EdgeType.COLOR_SOBEL:
-            Gradient_X_64F = cv2.Sobel(SrcImg, cv2.CV_64F, 1, 0)
-            Gradient_Y_64F = cv2.Sobel(SrcImg, cv2.CV_64F, 0, 1)
+        elif EdType == self.EdgeType.COLOR_SOBEL:
+            Gradient_X_64F = cv2.Sobel(SrcImg, cv2.CV_64F, 1, 0, ksize = ksize)
+            Gradient_Y_64F = cv2.Sobel(SrcImg, cv2.CV_64F, 0, 1, ksize = ksize)
             Gradient_X_8U = cv2.convertScaleAbs(Gradient_X_64F)
             Gradient_Y_8U = cv2.convertScaleAbs(Gradient_Y_64F)
             OutImg = cv2.convertScaleAbs(Gradient_X_8U * 0.5 + Gradient_Y_8U * 0.5)
@@ -377,7 +355,6 @@ class ConvIP(BaseIP):
 
     def GetRobertsKernel(self):
         self.__InitRobertsKernel()
-        # Kernels = tuple(map(tuple, self.__PrewittKernel[:,:,0:2]))
         return (self.__RobertsKernel[:,:,0], self.__RobertsKernel[:,:,1])
 
     def GetPrewittKernel(self):
@@ -391,15 +368,13 @@ class ConvIP(BaseIP):
                 self.__KirschKernel[:,:,4], self.__KirschKernel[:,:,5], \
                 self.__KirschKernel[:,:,6], self.__KirschKernel[:,:,7])
 
-    @staticmethod
-    def Conv2D(SrcImg, Kernel):
+    def Conv2D(self, SrcImg, Kernel):
         DstImg = cv2.filter2D(SrcImg, -1, Kernel)
         return DstImg
 
-    @staticmethod
-    def ImSharpening(SrcImg, SpType = SharpType.UNSHARP_MASK, SmType = SmoothType.BILATERAL):
-        Landa = 0.5
-        if SpType == ConvIP.SharpType.LAPLACE_TYPE1:
+    def ImSharpening(self, SrcImg, SpType = SharpType.UNSHARP_MASK, SmType = SmoothType.BILATERAL,
+                      ksize = 3, d = 9, sigma = 75, Landa = 0.5):
+        if SpType == self.SharpType.LAPLACE_TYPE1:
             Original = np.zeros((3, 3), dtype=np.int)
             Original[1,1] =  1
             Filtered = np.zeros((3, 3), dtype=np.int)
@@ -409,15 +384,15 @@ class ConvIP(BaseIP):
             Filtered[2,1] = -1
             Filtered[1,2] = -1
             Resulting = Original + Landa * Filtered
-            DstImg = ConvIP.Conv2D(SrcImg, Resulting)
-        elif SpType == ConvIP.SharpType.LAPLACE_TYPE2:
+            DstImg = self.Conv2D(SrcImg, Resulting)
+        elif SpType == self.SharpType.LAPLACE_TYPE2:
             Original = np.zeros((3, 3), dtype=np.int)
             Original[1,1] = 1
             Filtered = np.full((3, 3), -1, dtype=np.int)
             Filtered[1,1] = 8
             Resulting = Original + Landa * Filtered
-            DstImg = ConvIP.Conv2D(SrcImg, Resulting)
-        elif SpType == ConvIP.SharpType.SECOND_ORDER_LOG:
+            DstImg = self.Conv2D(SrcImg, Resulting)
+        elif SpType == self.SharpType.SECOND_ORDER_LOG:
             Original = np.zeros((5, 5), dtype=np.int)
             Original[2,2] = 1
             Filtered = np.zeros((5, 5), dtype=np.int)
@@ -435,9 +410,9 @@ class ConvIP(BaseIP):
             Filtered[3,3] = -1
             Filtered[2,4] = -1
             Resulting = Original + Landa * Filtered
-            DstImg = ConvIP.Conv2D(SrcImg, Resulting)
-        elif SpType == ConvIP.SharpType.UNSHARP_MASK:
-            Coarse = ConvIP.Smooth2D(SrcImg, 5, SmType)
+            DstImg = self.Conv2D(SrcImg, Resulting)
+        elif SpType == self.SharpType.UNSHARP_MASK:
+            Coarse = self.Smooth2D(SrcImg, ksize, SmType, d, sigma)
             Fine = SrcImg * 1.0 - Coarse * 1.0
             DstImg = cv2.convertScaleAbs(SrcImg + Landa * Fine)
         return DstImg

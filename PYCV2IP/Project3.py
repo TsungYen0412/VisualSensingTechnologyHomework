@@ -3,12 +3,12 @@
 import cv2
 import numpy as np
 import cv2IP
-import tkinter as tk
+import Project3Interface
 
 def Example_ImSmooth(SmType):
     IP = cv2IP.ConvIP()
     # source image
-    SrcImg = IP.ImRead("img/InputIm_1_FixdPoint.bmp")
+    SrcImg = IP.ImRead("img/src/InputIm_1_FixdPoint.bmp")
     IP.ImShow("Original Image", SrcImg)
     if SrcImg.shape[2] == 4:
         SrcBGR = np.array(SrcImg[:,:,:3])
@@ -27,7 +27,7 @@ def Example_ImSmooth(SmType):
 def Example_ImEdge(EdType):
     IP = cv2IP.ConvIP()
     # source image
-    SrcImg = IP.ImRead("img/foreGroundAsset.png")
+    SrcImg = IP.ImRead("img/src/foreGroundAsset.png")
     IP.ImShow("Original Image", SrcImg)
     if SrcImg.shape[2] == 4:
         SrcBGR = np.array(SrcImg[:,:,:3])
@@ -52,7 +52,7 @@ def Example_ImEdge(EdType):
 def Example_ImConv2D_Roberts():
     IP = cv2IP.ConvIP()
     # source image
-    SrcImg = IP.ImRead("img/foreGroundAsset.png")
+    SrcImg = IP.ImRead("img/src/foreGroundAsset.png")
     IP.ImShow("Original Image", SrcImg)
     if SrcImg.shape[2] == 4:
         SrcBGR = np.array(SrcImg[:,:,:3])
@@ -66,10 +66,7 @@ def Example_ImConv2D_Roberts():
         Grad_Planes.append(IP.Conv2D(SrcGray, Kernels[i]))
         Grad_Planes[i] = cv2.convertScaleAbs(Grad_Planes[i])
 
-    GradImg = Grad_Planes[0] * 0.5
-    for i in range(1, len(Kernels)):
-        GradImg += Grad_Planes[i] * 0.5
-    GradImg = cv2.convertScaleAbs(GradImg)
+    GradImg = cv2.convertScaleAbs(Grad_Planes[0] * 0.5 + Grad_Planes[1] * 0.5)
     IP.ImShow("Roberts Image", GradImg)
     cv2.waitKey(0)
     del IP
@@ -77,7 +74,7 @@ def Example_ImConv2D_Roberts():
 def Example_ImConv2D_Prewitt():
     IP = cv2IP.ConvIP()
     # source image
-    SrcImg = IP.ImRead("img/foreGroundAsset.png")
+    SrcImg = IP.ImRead("img/src/foreGroundAsset.png")
     IP.ImShow("Original Image", SrcImg)
     if SrcImg.shape[2] == 4:
         SrcBGR = np.array(SrcImg[:,:,:3])
@@ -91,10 +88,7 @@ def Example_ImConv2D_Prewitt():
         Grad_Planes.append(IP.Conv2D(SrcGray, Kernels[i]))
         Grad_Planes[i] = cv2.convertScaleAbs(Grad_Planes[i])
 
-    GradImg = Grad_Planes[0] * 0.5
-    for i in range(1, len(Kernels)):
-        GradImg += Grad_Planes[i] * 0.5
-    GradImg = cv2.convertScaleAbs(GradImg)
+    GradImg = cv2.convertScaleAbs(Grad_Planes[0] * 0.5 + Grad_Planes[1] * 0.5)
     IP.ImShow("Prewitt Image", GradImg)
     cv2.waitKey(0)
     del IP
@@ -102,7 +96,7 @@ def Example_ImConv2D_Prewitt():
 def Example_ImConv2D_Kirsch():
     IP = cv2IP.ConvIP()
     # source image
-    SrcImg = IP.ImRead("img/foreGroundAsset.png")
+    SrcImg = IP.ImRead("img/src/foreGroundAsset.png")
     IP.ImShow("Original Image", SrcImg)
     if SrcImg.shape[2] == 4:
         SrcBGR = np.array(SrcImg[:,:,:3])
@@ -116,10 +110,9 @@ def Example_ImConv2D_Kirsch():
         Grad_Planes.append(IP.Conv2D(SrcGray, Kernels[i]))
         Grad_Planes[i] = cv2.convertScaleAbs(Grad_Planes[i])
 
-    GradImg = Grad_Planes[0] * 0.5
-    for i in range(1, len(Kernels)):
-        GradImg += Grad_Planes[i] * 0.5
-    GradImg = cv2.convertScaleAbs(GradImg)
+    GradImg = cv2.max(Grad_Planes[0], Grad_Planes[1])
+    for i in range(2, len(Kernels)):
+        GradImg = cv2.max(GradImg, Grad_Planes[i])
     IP.ImShow("Kirsch Image", GradImg)
     cv2.waitKey(0)
     del IP
@@ -127,20 +120,25 @@ def Example_ImConv2D_Kirsch():
 def Example_ImSharpening(SpType, SmType):
     IP = cv2IP.ConvIP()
     # source image
-    SrcImg = IP.ImRead("img/foreGroundAsset.png")
+    SrcImg = IP.ImRead("img/src/foreGroundAsset.png")
     IP.ImShow("Original Image", SrcImg)
     if SrcImg.shape[2] == 4:
         SrcBGR = np.array(SrcImg[:,:,:3])
     else:
         SrcBGR = np.array(SrcImg)
 
-    DstImg = IP.ImSharpening(SrcImg, SpType, SmType)
+    DstImg = IP.ImSharpening(SrcBGR, SpType, SmType)
     IP.ImShow("Sharpening Image", DstImg)
     cv2.waitKey(0)
     del IP
+    
 
 if __name__ == '__main__':
-    # Example_ImSmooth(cv2IP.ConvIP.SmoothType.BILATERAL)
+    # Example_ImSmooth(cv2IP.ConvIP.SmoothType.BLUR)
     # Example_ImEdge(cv2IP.ConvIP.EdgeType.COLOR_SOBEL)
+    # Example_ImConv2D_Roberts()
+    # Example_ImConv2D_Prewitt()
     # Example_ImConv2D_Kirsch()
-    Example_ImSharpening(cv2IP.ConvIP.SharpType.UNSHARP_MASK, cv2IP.ConvIP.SmoothType.GAUSSIAN)
+    # Example_ImSharpening(cv2IP.ConvIP.SharpType.UNSHARP_MASK, cv2IP.ConvIP.SmoothType.GAUSSIAN)
+
+    Project3Interface.Interface()
