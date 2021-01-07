@@ -217,9 +217,9 @@ class ConvIP(BaseIP):
 
     def __init__(self):
         super().__init__()
-        self.__RobertsKernel = np.zeros((2, 2, 2), dtype=np.int) # Gx, Gy
-        self.__PrewittKernel = np.zeros((3, 3, 2), dtype=np.int) # x, y
-        self.__KirschKernel = np.full((3, 3, 8), -3, dtype=np.int) # E, NE, N, NW, W, SW, S, SE
+        self.__InitRobertsKernel()
+        self.__InitPrewittKernel()
+        self.__InitKirschKernel()
 
     class SmoothType(enum.IntEnum):
         BLUR = 1
@@ -241,7 +241,7 @@ class ConvIP(BaseIP):
         SECOND_ORDER_LOG = 3
         UNSHARP_MASK = 4
 
-    def Smooth2D(self, SrcImg, ksize = 15, SmType = SmoothType.BLUR,
+    def Smooth2D(self, SrcImg, ksize = 5, SmType = SmoothType.BLUR,
                   d = 9, sigma = 75):
         if SmType == self.SmoothType.BLUR:
             OutImg = cv2.blur(SrcImg, (ksize, ksize))
@@ -288,6 +288,7 @@ class ConvIP(BaseIP):
         return OutImg
 
     def __InitRobertsKernel(self):
+        self.__RobertsKernel = np.zeros((2, 2, 2), dtype=np.int)
         #----------------Gx---------------#
         self.__RobertsKernel[0,0,0] =  1
         self.__RobertsKernel[1,1,0] = -1
@@ -296,6 +297,7 @@ class ConvIP(BaseIP):
         self.__RobertsKernel[0,1,1] = -1
 
     def __InitPrewittKernel(self):
+        self.__PrewittKernel = np.zeros((3, 3, 2), dtype=np.int)
         #----------------x----------------#
         self.__PrewittKernel[0,0,0] = -1
         self.__PrewittKernel[2,0,0] =  1
@@ -312,6 +314,7 @@ class ConvIP(BaseIP):
         self.__PrewittKernel[2,2,1] =  1
     
     def __InitKirschKernel(self):
+        self.__KirschKernel = np.full((3, 3, 8), -3, dtype=np.int)
         #----------------E----------------#
         self.__KirschKernel[2,0,0] = 5
         self.__KirschKernel[1,1,0] = 0
@@ -354,18 +357,15 @@ class ConvIP(BaseIP):
         self.__KirschKernel[2,2,7] = 5
 
     def GetRobertsKernel(self):
-        self.__InitRobertsKernel()
         return (self.__RobertsKernel[:,:,0], self.__RobertsKernel[:,:,1])
 
     def GetPrewittKernel(self):
-        self.__InitPrewittKernel()
         return (self.__PrewittKernel[:,:,0], self.__PrewittKernel[:,:,1])
     
     def GetKirschKernel(self):
-        self.__InitKirschKernel()
-        return (self.__KirschKernel[:,:,0], self.__KirschKernel[:,:,1], \
-                self.__KirschKernel[:,:,2], self.__KirschKernel[:,:,3], \
-                self.__KirschKernel[:,:,4], self.__KirschKernel[:,:,5], \
+        return (self.__KirschKernel[:,:,0], self.__KirschKernel[:,:,1],
+                self.__KirschKernel[:,:,2], self.__KirschKernel[:,:,3],
+                self.__KirschKernel[:,:,4], self.__KirschKernel[:,:,5],
                 self.__KirschKernel[:,:,6], self.__KirschKernel[:,:,7])
 
     def Conv2D(self, SrcImg, Kernel):
@@ -373,7 +373,7 @@ class ConvIP(BaseIP):
         return DstImg
 
     def ImSharpening(self, SrcImg, SpType = SharpType.UNSHARP_MASK, SmType = SmoothType.BILATERAL,
-                      ksize = 3, d = 9, sigma = 75, Landa = 0.5):
+                      ksize = 5, d = 9, sigma = 75, Landa = 1.0):
         if SpType == self.SharpType.LAPLACE_TYPE1:
             Original = np.zeros((3, 3), dtype=np.int)
             Original[1,1] =  1

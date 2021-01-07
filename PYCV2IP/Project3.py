@@ -3,7 +3,7 @@
 import cv2
 import numpy as np
 import cv2IP
-import Project3Interface
+import Interface
 
 def Example_ImSmooth(SmType):
     IP = cv2IP.ConvIP()
@@ -141,4 +141,4 @@ if __name__ == '__main__':
     # Example_ImConv2D_Kirsch()
     # Example_ImSharpening(cv2IP.ConvIP.SharpType.UNSHARP_MASK, cv2IP.ConvIP.SmoothType.GAUSSIAN)
 
-    Project3Interface.Interface()
+    Interface.Project3Interface()
